@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sumdoku - Magic Square Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        body {
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            color: #333;
+            overflow-x: hidden;
+        }
+        .game-container {
+            max-width: 100%;
+            width: 100%;
+            background: 
+                linear-gradient(135deg, #e0f2ff 0%, #e8e4ff 30%, #ffe1f0 60%, #fff5e0 100%),
+                radial-gradient(circle at 20% 30%, rgba(52, 152, 219, 0.25) 0 20%, transparent 25%),
+                radial-gradient(circle at 80% 70%, rgba(155, 89, 182, 0.25) 0 20%, transparent 25%),
+                radial-gradient(circle at 40% 60%, rgba(46, 204, 113, 0.2) 0 15%, transparent 20%),
+                radial-gradient(circle at 60% 40%, rgba(231, 76, 60, 0.15) 0 15%, transparent 20%);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.2),
+                inset 0 0 120px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+        }
+        .title {
+            font-size: 36px;
+            font-weight: 800;
+            color: #2c3e50;
+            padding: 12px 30px;
+            border-radius: 50px;
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 
+                0 6px 16px rgba(52, 152, 219, 0.15),
+                inset 0 2px 6px rgba(255, 255, 255, 0.6);
+            position: relative;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            letter-spacing: 1px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 16px 0 20px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 2;
+        }
+        .stat {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 10px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            font-weight: 700;
+            color: #1a202c;
+            font-size: 14px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+        .stat .icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        .moves .icon {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        }
+        .time .icon {
+            background: linear-gradient(135deg, #34d399, #10b981);
+        }
+        .hints .icon {
+            background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+        }
+        .target-info {
+            text-align: center;
+            font-weight: 800;
+            color: #1e40af;
+            margin-bottom: 20px;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 14px;
+            background: rgba(96, 165, 250, 0.15);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.1);
+            position: relative;
+            z-index: 2;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .grid-container {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 14px;
+            border-radius: 16px;
+            box-shadow: 
+                0 8px 24px rgba(2, 6, 23, 0.06),
+                inset 0 0 20px rgba(255, 255, 255, 0.6);
+            margin: 0 auto 20px;
+            display: grid;
+            gap: var(--gap);
+            justify-content: center;
+            align-items: center;
+            width: fit-content;
+            max-width: 100%;
+            position: relative;
+            z-index: 2;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            overflow: hidden;
+        }
+        
+        .grid-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(45deg);
+            animation: shine 5s infinite;
+            z-index: 1;
+        }
+        
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
+            }
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+            }
+        }
+        
+        .grid-container.level-complete {
+            animation: glow 1.5s ease-in-out;
+        }
+        
+        @keyframes glow {
+            0% {
+                box-shadow: 
+                    0 8px 24px rgba(2, 6, 23, 0.06),
+                    inset 0 0 20px rgba(255, 255, 255, 0.6);
+            }
+            50% {
+                box-shadow: 
+                    0 8px 32px rgba(16, 185, 129, 0.4),
+                    0 0 0 10px rgba(16, 185, 129, 0.2),
+                    inset 0 0 20px rgba(255, 255, 255, 0.6);
+            }
+            100% {
+                box-shadow: 
+                    0 8px 24px rgba(2, 6, 23, 0.06),
+                    inset 0 0 20px rgba(255, 255, 255, 0.6);
+            }
+        }
+        
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: calc(var(--cell-size) * 0.35);
+            font-weight: 800;
+            color: #0f172a;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            user-select: none;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .cell:hover:not(.filled-cell) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            border-color: rgba(96, 165, 250, 0.3);
+        }
+        
+        .empty-cell {
+            color: #718096;
+            background: linear-gradient(180deg, rgba(240, 249, 255, 0.9), rgba(230, 240, 255, 0.95));
+            border: 2px dashed #c5d7f0;
+        }
+        .filled-cell {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 249, 255, 1));
+            border-color: #b3d7ff;
+            color: #0b2b4a;
+        }
+        .cell.selected {
+            background: #fff9db;
+            box-shadow: 0 10px 24px rgba(250, 204, 21, 0.15);
+            transform: translateY(-3px) scale(1.03);
+            border-color: rgba(250, 204, 21, 0.4);
+        }
+        .cell.possible {
+            outline: 2px solid rgba(96, 165, 250, 0.2);
+            border-color: rgba(96, 165, 250, 0.3);
+            background: linear-gradient(180deg, rgba(224, 239, 255, 0.8), rgba(210, 230, 255, 0.9));
+            transform: translateY(-2px);
+        }
+        
+        .cell.possible::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+        }
+        
+        .cell.invalid {
+            background: rgba(254, 226, 226, 0.98);
+            border-color: rgba(239, 68, 68, 0.3);
+            animation: shake 0.3s ease;
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.1);
+        }
+        
+        .cell.correct-placed {
+            position: relative;
+        }
+        
+        .cell.correct-placed::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 12px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.6) 0%, rgba(16, 185, 129, 0) 70%);
+            animation: greenPulse 0.6s ease-out;
+            z-index: -1;
+        }
+        
+        @keyframes greenPulse {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+        
+        .cell.row-complete {
+            animation: rowGlow 1s ease-out;
+        }
+        
+        .cell.col-complete {
+            animation: colGlow 1s ease-out;
+        }
+        
+        @keyframes rowGlow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.5);
+                transform: scale(1.05);
+            }
+            100% {
+                box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes colGlow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.5);
+                transform: scale(1.05);
+            }
+            100% {
+                box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            50% { transform: translateX(4px); }
+            75% { transform: translateX(-2px); }
+            100% { transform: translateX(0); }
+        }
+        .sum {
+            width: var(--sum-size);
+            height: var(--sum-size);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #4a5568;
+            font-size: calc(var(--sum-size) * 0.44);
+            position: relative;
+            line-height: 1;
+            justify-self: center;
+            align-self: center;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        .sum.complete {
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .sum.complete::after {
+            content: '✓';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            font-size: 12px;
+            color: #10b981;
+            font-weight: 900;
+            background: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .number-bank {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px 0;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+            flex-wrap: wrap;
+        }
+        .number-tile {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: calc(var(--cell-size) * 0.35);
+            font-weight: 900;
+            color: #071433;
+            background: linear-gradient(135deg, #ffffff, #e6f0ff);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(2, 6, 23, 0.08);
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .number-tile:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(2, 6, 23, 0.12);
+            background: linear-gradient(135deg, #ffffff, #f0f7ff);
+        }
+        
+        .number-tile.selected {
+            border-color: rgba(96, 165, 250, 0.3);
+            background: linear-gradient(135deg, #fffdf1, #fff7db);
+            transform: scale(1.06);
+            box-shadow: 0 12px 24px rgba(250, 204, 21, 0.2);
+        }
+        
+        .actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 16px 24px;
+            border-radius: 16px;
+            border: none;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: all 0.2s ease;
+            font-size: 16px;
+            flex: 1;
+            max-width: 160px;
+            min-width: 120px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+            position: relative;
+            z-index: 2;
+        }
+        .btn i {
+            font-size: 18px;
+        }
+        .hint-btn {
+            background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+        }
+        .back-btn {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        }
+        .menu-btn {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        }
+        .next-btn {
+            background: linear-gradient(135deg, #34d399, #10b981);
+        }
+        .restart-btn {
+            background: linear-gradient(135deg, #f87171, #ef4444);
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        
+        .completion-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .completion-message h2 {
+            color: #10b981;
+            margin-bottom: 15px;
+            font-size: 32px;
+        }
+        
+        .stars {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 48px;
+        }
+        
+        .star {
+            color: #d1d5db;
+            transition: all 0.3s ease;
+        }
+        
+        .star.filled {
+            color: #fbbf24;
+            animation: starPop 0.5s ease;
+        }
+        
+        @keyframes starPop {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.3);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .completion-message p {
+            margin-bottom: 20px;
+            color: #4a5568;
+            font-size: 18px;
+        }
+        
+        .completion-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        #confettiCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 20px;
+            }
+            
+            .title {
+                font-size: 28px;
+                padding: 10px 24px;
+            }
+            
+            .stat {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            .btn {
+                padding: 14px 20px;
+                font-size: 15px;
+                min-width: 100px;
+            }
+        }
+        
+        :root {
+            --cell-size: 68px;
+            --gap: 7px;
+            --sum-size: 32px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="confettiCanvas"></canvas>
+    <div class="game-container">
+        <div class="header">
+            <div class="title" id="levelTitle">Level 1</div>
+        </div>
+        <div class="stats" aria-hidden="true">
+            <div class="stat moves"><div class="icon">🎯</div> <span>Moves: <strong id="moves">0</strong></span></div>
+            <div class="stat time"><div class="icon">⏱</div> <span>Time: <strong id="time">0s</strong></span></div>
+            <div class="stat hints"><div class="icon">💡</div> <span>Hints: <strong id="hints">3</strong></span></div>
+        </div>
+        <div class="target-info" id="targetInfo">Target sum: <strong id="targetVal">0</strong></div>
+        
+        <div class="grid-container" id="gridContainer"></div>
+        
+        <div class="number-bank" id="bank"></div>
+        
+        <div class="actions">
+            <button class="btn restart-btn" id="btnRestart"><i class="fas fa-redo"></i> Restart</button>
+            <button class="btn hint-btn" id="btnHint"><i class="fas fa-lightbulb"></i> Hint</button>
+        </div>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    <div class="completion-message" id="completionMessage">
+        <h2>🎉 Level Complete!</h2>
+        <div class="stars" id="starsDisplay">
+            <span class="star">★</span>
+            <span class="star">★</span>
+            <span class="star">★</span>
+        </div>
+        <p>You completed the level in <span id="finalMoves">0</span> moves and <span id="finalTime">0</span> seconds!</p>
+        <div class="completion-actions">
+            <button class="btn restart-btn" id="restartBtn"><i class="fas fa-redo"></i> Restart</button>
+            <button class="btn next-btn" id="nextBtn"><i class="fas fa-arrow-right"></i> Next Level</button>
+        </div>
+    </div>
+    
+    <script>
+        // ==================== CONFETTI ANIMATION ====================
+        
+        const canvas = document.getElementById('confettiCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        class ConfettiPiece {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 10 + 5;
+                this.speedY = Math.random() * 3 + 2;
+                this.speedX = Math.random() * 6 - 3;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = Math.random() * 10 - 5;
+                this.color = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#feca57', '#ff9ff3', '#54a0ff', '#48dbfb', '#1dd1a1'][Math.floor(Math.random() * 8)];
+                this.shape = Math.random() > 0.5 ? 'square' : 'circle';
+            }
+            
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                this.rotation += this.rotationSpeed;
+                this.speedY += 0.1; // gravity
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation * Math.PI / 180);
+                ctx.fillStyle = this.color;
+                
+                if (this.shape === 'square') {
+                    ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+        }
+        
+        let confettiPieces = [];
+        let animationId = null;
+        
+        function createConfetti(x, y, count) {
+            for (let i = 0; i < count; i++) {
+                confettiPieces.push(new ConfettiPiece(x, y));
+            }
+        }
+        
+        function animateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            confettiPieces.forEach((piece, index) => {
+                piece.update();
+                piece.draw();
+                
+                // Remove pieces that fall off screen
+                if (piece.y > canvas.height + 20) {
+                    confettiPieces.splice(index, 1);
+                }
+            });
+            
+            if (confettiPieces.length > 0) {
+                animationId = requestAnimationFrame(animateConfetti);
+            } else {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+        
+        function launchConfetti() {
+            // Center burst
+            createConfetti(canvas.width / 2, canvas.height * 0.4, 50);
+            
+            setTimeout(() => {
+                // Left side burst
+                createConfetti(canvas.width * 0.2, canvas.height * 0.3, 40);
+            }, 300);
+            
+            setTimeout(() => {
+                // Right side burst
+                createConfetti(canvas.width * 0.8, canvas.height * 0.3, 40);
+            }, 600);
+            
+            setTimeout(() => {
+                // Another center burst
+                createConfetti(canvas.width / 2, canvas.height * 0.5, 60);
+            }, 900);
+            
+            if (!animationId) {
+                animateConfetti();
+            }
+        }
+        
+        // ==================== MAGIC SQUARE GENERATION ====================
+        
+        function generateOddMagicSquare(n) {
+            const square = Array(n).fill(0).map(() => Array(n).fill(0));
+            let row = 0;
+            let col = Math.floor(n / 2);
+            
+            for (let num = 1; num <= n * n; num++) {
+                square[row][col] = num;
+                const newRow = (row - 1 + n) % n;
+                const newCol = (col + 1) % n;
+                
+                if (square[newRow][newCol] !== 0) {
+                    row = (row + 1) % n;
+                } else {
+                    row = newRow;
+                    col = newCol;
+                }
+            }
+            return square;
+        }
+        
+        function generateDoublyEvenMagicSquare(n) {
+            const square = Array(n).fill(0).map(() => Array(n).fill(0));
+            
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    square[i][j] = n * i + j + 1;
+                }
+            }
+            
+            for (let i = 0; i < n / 4; i++) {
+                for (let j = 0; j < n / 4; j++) {
+                    square[i][j] = n * n + 1 - square[i][j];
+                }
+            }
+            
+            for (let i = 0; i < n / 4; i++) {
+                for (let j = 3 * (n / 4); j < n; j++) {
+                    square[i][j] = n * n + 1 - square[i][j];
+                }
+            }
+            
+            for (let i = 3 * n / 4; i < n; i++) {
+                for (let j = 0; j < n / 4; j++) {
+                    square[i][j] = n * n + 1 - square[i][j];
+                }
+            }
+            
+            for (let i = 3 * n / 4; i < n; i++) {
+                for (let j = 3 * n / 4; j < n; j++) {
+                    square[i][j] = n * n + 1 - square[i][j];
+                }
+            }
+            
+            for (let i = n / 4; i < 3 * n / 4; i++) {
+                for (let j = n / 4; j < 3 * n / 4; j++) {
+                    square[i][j] = n * n + 1 - square[i][j];
+                }
+            }
+            
+            return square;
+        }
+        
+        function generateSinglyEvenMagicSquare(n) {
+            const half = n / 2;
+            const subSquare = generateOddMagicSquare(half);
+            const square = Array(n).fill(0).map(() => Array(n).fill(0));
+            
+            const quadrantOffsets = [
+                [0, 0, 0],
+                [0, half, 2 * half * half],
+                [half, 0, 3 * half * half],
+                [half, half, half * half]
+            ];
+            
+            for (const [rowOffset, colOffset, numOffset] of quadrantOffsets) {
+                for (let i = 0; i < half; i++) {
+                    for (let j = 0; j < half; j++) {
+                        square[rowOffset + i][colOffset + j] = subSquare[i][j] + numOffset;
+                    }
+                }
+            }
+            
+            const k = (n - 2) / 4;
+            
+            for (let i = 0; i < half; i++) {
+                for (let j = 0; j < k; j++) {
+                    if (i === k) continue;
+                    [square[i][j], square[i + half][j]] = [square[i + half][j], square[i][j]];
+                }
+            }
+            
+            [square[k][0], square[k + half][0]] = [square[k + half][0], square[k][0]];
+            [square[k][k], square[k + half][k]] = [square[k + half][k], square[k][k]];
+            
+            for (let i = 0; i < half; i++) {
+                for (let j = n - k + 1; j < n; j++) {
+                    [square[i][j], square[i + half][j]] = [square[i + half][j], square[i][j]];
+                }
+            }
+            
+            return square;
+        }
+        
+        function generateMagicSquare(n) {
+            if (n % 2 === 1) {
+                return generateOddMagicSquare(n);
+            } else if (n % 4 === 0) {
+                return generateDoublyEvenMagicSquare(n);
+            } else {
+                return generateSinglyEvenMagicSquare(n);
+            }
+        }
+        
+        function createPuzzle(square, difficulty) {
+            const n = square.length;
+            
+            // Number of empty cells equals grid size (4 for 4×4, 5 for 5×5, etc.)
+            const numEmpty = n;
+            
+            const cells = [];
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    cells.push([i, j]);
+                }
+            }
+            
+            // Shuffle cells
+            for (let i = cells.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cells[i], cells[j]] = [cells[j], cells[i]];
+            }
+            
+            // Select cells to be empty
+            const emptySet = new Set();
+            for (let i = 0; i < numEmpty; i++) {
+                emptySet.add(`${cells[i][0]},${cells[i][1]}`);
+            }
+            
+            const puzzle = Array(n).fill(0).map(() => Array(n).fill(null));
+            const emptyCells = [];
+            
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    if (emptySet.has(`${i},${j}`)) {
+                        emptyCells.push([i, j, square[i][j]]);
+                    } else {
+                        puzzle[i][j] = square[i][j];
+                    }
+                }
+            }
+            
+            return { puzzle, emptyCells, solution: square };
+        }
+        
+        // Generate a grid using only numbers 1-9
+        function generateConstrainedGrid(n) {
+            const grid = Array(n).fill(0).map(() => Array(n).fill(0));
+            
+            // Fill grid with random numbers 1-9
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    grid[i][j] = Math.floor(Math.random() * 9) + 1;
+                }
+            }
+            
+            return grid;
+        }
+        
+        // Adjust grid to match target sum while keeping numbers 1-9
+        function adjustGridToTarget(grid, targetSum) {
+            const n = grid.length;
+            const maxIterations = 1000;
+            
+            for (let iter = 0; iter < maxIterations; iter++) {
+                let allMatch = true;
+                
+                // Check and adjust rows
+                for (let i = 0; i < n; i++) {
+                    let rowSum = grid[i].reduce((a, b) => a + b, 0);
+                    if (rowSum !== targetSum) {
+                        allMatch = false;
+                        const diff = targetSum - rowSum;
+                        const j = Math.floor(Math.random() * n);
+                        const newVal = Math.max(1, Math.min(9, grid[i][j] + diff));
+                        grid[i][j] = newVal;
+                    }
+                }
+                
+                // Check and adjust columns
+                for (let j = 0; j < n; j++) {
+                    let colSum = 0;
+                    for (let i = 0; i < n; i++) {
+                        colSum += grid[i][j];
+                    }
+                    if (colSum !== targetSum) {
+                        allMatch = false;
+                        const diff = targetSum - colSum;
+                        const i = Math.floor(Math.random() * n);
+                        const newVal = Math.max(1, Math.min(9, grid[i][j] + Math.floor(diff / 2)));
+                        grid[i][j] = newVal;
+                    }
+                }
+                
+                if (allMatch) break;
+            }
+            
+            return grid;
+        }
+        
+        // ==================== GAME STATE ====================
+        
+        const LEVEL_PROGRESSION = [
+            { size: 4, difficulty: 'easy', targetSum: 18 },
+            { size: 4, difficulty: 'medium', targetSum: 20 },
+            { size: 4, difficulty: 'hard', targetSum: 22 },
+            { size: 5, difficulty: 'easy', targetSum: 23 },
+            { size: 5, difficulty: 'medium', targetSum: 25 },
+            { size: 5, difficulty: 'hard', targetSum: 27 },
+            { size: 6, difficulty: 'easy', targetSum: 27 },
+            { size: 6, difficulty: 'medium', targetSum: 30 },
+            { size: 6, difficulty: 'hard', targetSum: 33 },
+            { size: 7, difficulty: 'easy', targetSum: 32 },
+            { size: 7, difficulty: 'medium', targetSum: 35 },
+            { size: 7, difficulty: 'hard', targetSum: 38 },
+            { size: 8, difficulty: 'easy', targetSum: 36 },
+            { size: 8, difficulty: 'medium', targetSum: 40 },
+            { size: 8, difficulty: 'hard', targetSum: 44 },
+            { size: 9, difficulty: 'easy', targetSum: 41 },
+            { size: 9, difficulty: 'medium', targetSum: 45 },
+            { size: 9, difficulty: 'hard', targetSum: 49 },
+            { size: 10, difficulty: 'easy', targetSum: 45 },
+            { size: 10, difficulty: 'medium', targetSum: 50 },
+            { size: 10, difficulty: 'hard', targetSum: 54 }
+        ];
+        
+        let currentLevel = 0;
+        let currentLevelData = null;
+        let target = 0;
+        let correctMap = {};
+        let selectedNumber = null;
+        let moves = 0;
+        let mistakes = 0;
+        let hints = 3;
+        let seconds = 0;
+        let timerInterval;
+        let gameCompleted = false;
+        let completedSums = { rows: [], cols: [] };
+        
+        // ==================== DOM REFERENCES ====================
+        
+        const gridContainer = document.getElementById('gridContainer');
+        const bank = document.getElementById('bank');
+        const movesEl = document.getElementById('moves');
+        const hintsEl = document.getElementById('hints');
+        const timeEl = document.getElementById('time');
+        const targetValEl = document.getElementById('targetVal');
+        const levelTitleEl = document.getElementById('levelTitle');
+        const targetInfoEl = document.getElementById('targetInfo');
+        
+        // ==================== LEVEL GENERATION ====================
+        
+        function loadLevel(levelIndex) {
+            if (levelIndex >= LEVEL_PROGRESSION.length) {
+                alert('Congratulations! You completed all levels!');
+                levelIndex = LEVEL_PROGRESSION.length - 1;
+            }
+            
+            currentLevel = levelIndex;
+            const config = LEVEL_PROGRESSION[levelIndex];
+            const n = config.size;
+            const targetSum = config.targetSum;
+            
+            // Update CSS variables for grid size
+            const cellSize = Math.max(45, Math.min(68, 300 / n));
+            const sumSize = Math.max(24, Math.min(32, cellSize * 0.47));
+            const gap = Math.max(5, Math.min(7, cellSize * 0.1));
+            
+            document.documentElement.style.setProperty('--cell-size', `${cellSize}px`);
+            document.documentElement.style.setProperty('--sum-size', `${sumSize}px`);
+            document.documentElement.style.setProperty('--gap', `${gap}px`);
+            
+            // Generate level with 1-9 constraint
+            let square = generateConstrainedGrid(n);
+            square = adjustGridToTarget(square, targetSum);
+            
+            const { puzzle, emptyCells, solution } = createPuzzle(square, config.difficulty);
+            
+            target = targetSum;
+            correctMap = {};
+            emptyCells.forEach(([r, c, val]) => {
+                correctMap[`${r},${c}`] = val;
+            });
+            
+            currentLevelData = {
+                n,
+                puzzle,
+                emptyCells,
+                solution,
+                magicSum: target
+            };
+            
+            // Reset game state
+            moves = 0;
+            mistakes = 0;
+            hints = 3;
+            seconds = 0;
+            gameCompleted = false;
+            selectedNumber = null;
+            completedSums = { 
+                rows: Array(n).fill(false), 
+                cols: Array(n).fill(false) 
+            };
+            
+            // Update UI
+            movesEl.textContent = moves;
+            hintsEl.textContent = hints;
+            timeEl.textContent = '0s';
+            targetValEl.textContent = target;
+            levelTitleEl.textContent = `Level ${levelIndex + 1} (${n}×${n})`;
+            
+            // Build grid
+            buildGrid(n, puzzle);
+            buildNumberBank(emptyCells);
+            
+            // Start timer
+            clearInterval(timerInterval);
+            startTimer();
+        }
+        
+        function buildGrid(n, puzzle) {
+            gridContainer.innerHTML = '';
+            gridContainer.style.gridTemplateColumns = `var(--sum-size) repeat(${n}, var(--cell-size)) var(--sum-size)`;
+            gridContainer.style.gridTemplateRows = `var(--sum-size) repeat(${n}, var(--cell-size)) var(--sum-size)`;
+            
+            // Top-left corner (empty)
+            const cornerTL = document.createElement('div');
+            cornerTL.style.gridRow = '1';
+            cornerTL.style.gridColumn = '1';
+            gridContainer.appendChild(cornerTL);
+            
+            // Top column sums
+            for (let j = 0; j < n; j++) {
+                const colSum = document.createElement('div');
+                colSum.className = 'sum col-sum';
+                colSum.dataset.col = j;
+                colSum.textContent = target;
+                colSum.style.gridRow = '1';
+                colSum.style.gridColumn = j + 2;
+                gridContainer.appendChild(colSum);
+            }
+            
+            // Top-right corner (empty)
+            const cornerTR = document.createElement('div');
+            cornerTR.style.gridRow = '1';
+            cornerTR.style.gridColumn = n + 2;
+            gridContainer.appendChild(cornerTR);
+            
+            // Grid cells with row sums
+            for (let i = 0; i < n; i++) {
+                // Left row sum
+                const rowSumLeft = document.createElement('div');
+                rowSumLeft.className = 'sum row-sum';
+                rowSumLeft.dataset.row = i;
+                rowSumLeft.textContent = target;
+                rowSumLeft.style.gridRow = i + 2;
+                rowSumLeft.style.gridColumn = '1';
+                gridContainer.appendChild(rowSumLeft);
+                
+                // Cells
+                for (let j = 0; j < n; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.r = i;
+                    cell.dataset.c = j;
+                    cell.style.gridRow = i + 2;
+                    cell.style.gridColumn = j + 2;
+                    
+                    if (puzzle[i][j] !== null) {
+                        cell.classList.add('filled-cell');
+                        cell.textContent = puzzle[i][j];
+                    } else {
+                        cell.classList.add('empty-cell');
+                    }
+                    
+                    gridContainer.appendChild(cell);
+                }
+                
+                // Right row sum
+                const rowSumRight = document.createElement('div');
+                rowSumRight.className = 'sum row-sum';
+                rowSumRight.dataset.row = i;
+                rowSumRight.textContent = target;
+                rowSumRight.style.gridRow = i + 2;
+                rowSumRight.style.gridColumn = n + 2;
+                gridContainer.appendChild(rowSumRight);
+            }
+            
+            // Bottom-left corner (empty)
+            const cornerBL = document.createElement('div');
+            cornerBL.style.gridRow = n + 2;
+            cornerBL.style.gridColumn = '1';
+            gridContainer.appendChild(cornerBL);
+            
+            // Bottom column sums
+            for (let j = 0; j < n; j++) {
+                const colSum = document.createElement('div');
+                colSum.className = 'sum col-sum';
+                colSum.dataset.col = j;
+                colSum.textContent = target;
+                colSum.style.gridRow = n + 2;
+                colSum.style.gridColumn = j + 2;
+                gridContainer.appendChild(colSum);
+            }
+            
+            // Bottom-right corner (empty)
+            const cornerBR = document.createElement('div');
+            cornerBR.style.gridRow = n + 2;
+            cornerBR.style.gridColumn = n + 2;
+            gridContainer.appendChild(cornerBR);
+            
+            updateSumDisplays();
+        }
+        
+        function buildNumberBank(emptyCells) {
+            const numbers = emptyCells.map(([r, c, val]) => val).sort((a, b) => a - b);
+            bank.innerHTML = '';
+            
+            numbers.forEach(num => {
+                const tile = document.createElement('div');
+                tile.className = 'number-tile';
+                tile.dataset.num = num;
+                tile.textContent = num;
+                bank.appendChild(tile);
+            });
+        }
+        
+        // ==================== GAME LOGIC ====================
+        
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!gameCompleted) {
+                    seconds++;
+                    timeEl.textContent = seconds + 's';
+                }
+            }, 1000);
+        }
+        
+        function parseCellValue(cell) {
+            const txt = cell.textContent.trim();
+            const n = parseInt(txt, 10);
+            return Number.isFinite(n) ? n : 0;
+        }
+        
+        function computeSums() {
+            const n = currentLevelData.n;
+            const rows = Array(n).fill(0);
+            const cols = Array(n).fill(0);
+            
+            document.querySelectorAll('.cell').forEach(c => {
+                const r = parseInt(c.dataset.r, 10);
+                const col = parseInt(c.dataset.c, 10);
+                const v = parseCellValue(c);
+                rows[r] += v;
+                cols[col] += v;
+            });
+            
+            return { rows, cols };
+        }
+        
+        function updateSumDisplays() {
+            const { rows, cols } = computeSums();
+            
+            document.querySelectorAll('.row-sum').forEach(el => {
+                const r = parseInt(el.dataset.row, 10);
+                el.textContent = rows[r];
+                
+                if (rows[r] === target) {
+                    if (!completedSums.rows[r]) {
+                        completedSums.rows[r] = true;
+                        document.querySelectorAll(`.cell[data-r="${r}"]`).forEach(cell => {
+                            cell.classList.add('row-complete');
+                            setTimeout(() => cell.classList.remove('row-complete'), 1000);
+                        });
+                    }
+                    el.classList.add('complete');
+                } else {
+                    el.classList.remove('complete');
+                    completedSums.rows[r] = false;
+                }
+            });
+            
+            document.querySelectorAll('.col-sum').forEach(el => {
+                const c = parseInt(el.dataset.col, 10);
+                el.textContent = cols[c];
+                
+                if (cols[c] === target) {
+                    if (!completedSums.cols[c]) {
+                        completedSums.cols[c] = true;
+                        document.querySelectorAll(`.cell[data-c="${c}"]`).forEach(cell => {
+                            cell.classList.add('col-complete');
+                            setTimeout(() => cell.classList.remove('col-complete'), 1000);
+                        });
+                    }
+                    el.classList.add('complete');
+                } else {
+                    el.classList.remove('complete');
+                    completedSums.cols[c] = false;
+                }
+            });
+        }
+        
+        function markPossibleCells(num) {
+            document.querySelectorAll('.cell.possible').forEach(x => x.classList.remove('possible'));
+            
+            Object.entries(correctMap).forEach(([key, val]) => {
+                const [r, c] = key.split(',');
+                const selector = `.cell[data-r="${r}"][data-c="${c}"]`;
+                const el = document.querySelector(selector);
+                if (el && el.classList.contains('empty-cell') && val === num) {
+                    el.classList.add('possible');
+                }
+            });
+        }
+        
+        function checkGameCompletion() {
+            const emptyCells = document.querySelectorAll('.cell.empty-cell');
+            
+            if (emptyCells.length === 0) {
+                const { rows, cols } = computeSums();
+                const allCorrect = rows.every(sum => sum === target) && 
+                                  cols.every(sum => sum === target);
+                
+                if (allCorrect && !gameCompleted) {
+                    gameCompleted = true;
+                    showCompletionMessage();
+                }
+            }
+        }
+        
+        function showCompletionMessage() {
+            gameCompleted = true;
+            gridContainer.classList.add('level-complete');
+            
+            // Calculate stars based on mistakes
+            let stars = 3;
+            if (mistakes === 1) {
+                stars = 2;
+            } else if (mistakes > 1) {
+                stars = 1;
+            }
+            
+            // Launch confetti animation
+            launchConfetti();
+            
+            // Show completion message after a short delay
+            setTimeout(() => {
+                document.getElementById('overlay').style.display = 'block';
+                document.getElementById('completionMessage').style.display = 'block';
+                document.getElementById('finalMoves').textContent = moves;
+                document.getElementById('finalTime').textContent = seconds;
+                
+                // Animate stars
+                const starElements = document.querySelectorAll('#starsDisplay .star');
+                starElements.forEach((star, index) => {
+                    star.classList.remove('filled');
+                    if (index < stars) {
+                        setTimeout(() => {
+                            star.classList.add('filled');
+                        }, 200 * (index + 1));
+                    }
+                });
+            }, 1200);
+        }
+        
+        // ==================== EVENT HANDLERS ====================
+        
+        bank.addEventListener('click', (e) => {
+            const tile = e.target.closest('.number-tile');
+            if (!tile) return;
+            
+            const already = tile.classList.contains('selected');
+            document.querySelectorAll('.number-tile').forEach(t => t.classList.remove('selected'));
+            
+            if (!already) {
+                tile.classList.add('selected');
+                selectedNumber = parseInt(tile.dataset.num, 10);
+            } else {
+                selectedNumber = null;
+                document.querySelectorAll('.cell.possible').forEach(x => x.classList.remove('possible'));
+            }
+        });
+        
+        gridContainer.addEventListener('click', (e) => {
+            const cell = e.target.closest('.cell');
+            if (!cell) return;
+            
+            if (selectedNumber === null && cell.classList.contains('empty-cell')) {
+                document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+                cell.classList.add('selected');
+                return;
+            }
+            
+            if (selectedNumber !== null && cell.classList.contains('empty-cell')) {
+                const r = cell.dataset.r, c = cell.dataset.c;
+                const key = `${r},${c}`;
+                const correct = correctMap[key];
+                
+                if (selectedNumber === correct) {
+                    cell.textContent = selectedNumber;
+                    cell.classList.remove('empty-cell', 'possible', 'selected');
+                    cell.classList.add('filled-cell');
+                    
+                    cell.classList.add('correct-placed');
+                    setTimeout(() => cell.classList.remove('correct-placed'), 600);
+                    
+                    const tile = document.querySelector(`.number-tile[data-num="${selectedNumber}"]`);
+                    if (tile) tile.remove();
+                    
+                    selectedNumber = null;
+                    document.querySelectorAll('.number-tile').forEach(t => t.classList.remove('selected'));
+                    document.querySelectorAll('.cell.possible').forEach(x => x.classList.remove('possible'));
+                    
+                    moves++;
+                    movesEl.textContent = moves;
+                    updateSumDisplays();
+                    checkGameCompletion();
+                } else {
+                    // Wrong placement - count as mistake
+                    mistakes++;
+                    
+                    cell.classList.add('invalid');
+                    setTimeout(() => cell.classList.remove('invalid'), 400);
+                    
+                    const tile = document.querySelector(`.number-tile[data-num="${selectedNumber}"]`);
+                    if (tile) {
+                        tile.style.transform = 'scale(.9)';
+                        setTimeout(() => tile.style.transform = '', 120);
+                    }
+                }
+            }
+        });
+        
+        document.getElementById('btnHint').addEventListener('click', () => {
+            if (hints <= 0) return;
+            
+            if (selectedNumber === null) {
+                targetInfoEl.style.background = 'rgba(239, 68, 68, 0.15)';
+                targetInfoEl.textContent = 'Select a number first!';
+                setTimeout(() => {
+                    targetInfoEl.style.background = 'rgba(96, 165, 250, 0.15)';
+                    targetInfoEl.innerHTML = `Target sum: <strong id="targetVal">${target}</strong>`;
+                }, 1500);
+                return;
+            }
+            
+            hints--;
+            hintsEl.textContent = hints;
+            markPossibleCells(selectedNumber);
+            
+            targetInfoEl.style.transform = 'scale(.98)';
+            setTimeout(() => targetInfoEl.style.transform = '', 120);
+        });
+        
+        document.getElementById('btnRestart').addEventListener('click', () => {
+            if (confirm('Are you sure you want to restart this level?')) {
+                loadLevel(currentLevel);
+            }
+        });
+        
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('completionMessage').style.display = 'none';
+            gridContainer.classList.remove('level-complete');
+            loadLevel(currentLevel);
+        });
+        
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('completionMessage').style.display = 'none';
+            gridContainer.classList.remove('level-complete');
+            loadLevel(currentLevel + 1);
+        });
+        
+        // ==================== INITIALIZATION ====================
+        
+        // Wait for DOM to be fully loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            loadLevel(0);
+        });
+    </script>
+</body>
+</html>
